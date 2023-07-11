@@ -24,8 +24,6 @@ jobs:
         with:
           path: ./build
   release:
-    permissions:
-      issues: 'write' 
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
@@ -41,6 +39,7 @@ jobs:
           title: Release ${GITHUB_REF##*/}
           content-filepath: ./CHANGELOG.md
           labels: RELEASE
+          token: ${{ secrets.GITHUB_TOKEN }}
   deploy:
     needs: release
     runs-on: ubuntu-latest
