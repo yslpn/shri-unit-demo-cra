@@ -25,33 +25,16 @@ jobs:
         uses: actions/upload-pages-artifact@v2
         with:
           path: ./build
-  generate-changelog:
+  release:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.ref_name }}
-          fetch-depth: 0
       - name: Install auto-changelog
         run: npm i -g auto-changelog
       - name: Generate changelog
         run: auto-changelog --output CHANGELOG.md
-      - name: Commit and push changelog
-        run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "docs(fix): update changelog by ${GITHUB_ACTOR}"
-          git push
-  release:
-    needs: generate-changelog
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Create Release Issue
         uses: peter-evans/create-issue-from-file@v4
         with:
