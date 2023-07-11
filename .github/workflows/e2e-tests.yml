@@ -2,7 +2,7 @@ name: Run e2e tests on PR
 on:
   pull_request:
 jobs:
-  test:
+  run-commitlint-on-pr:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:

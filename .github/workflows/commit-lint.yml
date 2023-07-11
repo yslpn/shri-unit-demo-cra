@@ -1,4 +1,4 @@
-name: Run Commitlint on PR
+name: Run commitlint on PR
 on:
   pull_request:
 jobs:
