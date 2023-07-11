@@ -24,7 +24,6 @@ jobs:
         with:
           path: ./build
   release:
-    permissions: write-all
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
