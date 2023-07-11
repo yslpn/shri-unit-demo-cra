@@ -30,7 +30,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          ref: master
+          ref: ${{ github.ref_name }}
       - name: Install auto-changelog
         run: npm i -g auto-changelog
       - name: Generate changelog
@@ -41,6 +41,7 @@ jobs:
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git add CHANGELOG.md
           git commit -m "docs(fix): Update Changelog by ${GITHUB_ACTOR}"
+          git push
   release:
     needs: generate-changelog
     runs-on: ubuntu-latest
