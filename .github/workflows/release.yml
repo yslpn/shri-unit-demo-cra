@@ -45,7 +45,7 @@ jobs:
       - name: Check Label and Run Tests
         run: npm run test
       - name: Build Project
-        run: npm run build
+        run: PUBLIC_URL="/shri-unit-demo-cra" npm run build
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
