@@ -33,17 +33,15 @@ jobs:
         run: npm i -g auto-changelog
       - name: Generate changelog
         run: auto-changelog --output CHANGELOG.md
-      - name: Extract Change Description
-        run: |
-          description=$(cat CHANGELOG.md)
-          echo "DESCRIPTION=$description" >> $GITHUB_ENV
       - name: Create Issue
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const issue = { owner: 'ownername', repo: 'reponame', title: 'Release ${{ github.ref }}', body: process.env.DESCRIPTION }
-            github.rest.issues.create(issue)
+            const fs = require('fs');
+            const description = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const issue = { owner: 'ownername', repo: 'reponame', title: 'Release ${{ github.ref }}', body: description };
+            github.rest.issues.create(issue);
   deploy:
     needs: release
     runs-on: ubuntu-latest
