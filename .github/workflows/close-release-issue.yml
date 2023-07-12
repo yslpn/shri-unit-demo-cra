@@ -1,0 +1,39 @@
+name: Handle release issue
+on:
+  issues:
+    types: [opened, labeled]
+jobs:
+  check_issue:
+    if: ${{ github.event.label.name == 'RELEASE' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Dependencies
+        run: npm ci
+      - name: Check Label and Run Tests
+        run: npm run test
+      - name: Build Project
+        run: npm run build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+      - name: Close Issue
+        if: ${{ success() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            const repoName = context.repo.repo;
+            const ownerName = context.repo.owner;
+            github.rest.issues.update({
+              owner: ownerName,
+              repo: repoName,
+              issue_number: issueNumber,
+              state: "closed"
+            });
