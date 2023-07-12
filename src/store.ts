@@ -23,6 +23,7 @@ export type Action =
 
 // reducer
 const rootReducer = (
+  // rome-ignore lint/style/useDefaultParameterLast: <explanation>
   state: ApplicationState = DEFAULT_STATE,
   action: Action
 ) => {
