@@ -3,7 +3,7 @@
 - [e2e тесты](e2e/example.spec.ts)
 - [unit тесты](src/example.test.tsx)
 
-Для запуска примеров необходимо установить [NodeJS](https://nodejs.org/en/download/) 16 или выше.
+Для запуска примеров необходимо установить [NodeJS](https://nodejs.org/en/download/) 18 или выше.
 
 Как запустить:
 
