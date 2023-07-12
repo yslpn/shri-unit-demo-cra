@@ -33,13 +33,25 @@ jobs:
         run: npm i -g auto-changelog
       - name: Generate changelog
         run: auto-changelog --output CHANGELOG.md
-      - name: Create Release Issue
-        uses: peter-evans/create-issue-from-file@v4
+      - name: Extract Change Description
+        run: |
+          sed -n '/## New Changes/,/## Old Changes/p' CHANGELOG.md > changes.txt
+          description=$(<changes.txt)
+          echo "DESCRIPTION=$description" >> $GITHUB_ENV
+      - name: Create Issue
+        uses: actions/github-script@v3
         with:
-          title: Release
-          # content-filepath: ./CHANGELOG.md
-          # labels: RELEASE
-          # token: ${{ secrets.MY_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = { owner: 'ownername', repo: 'reponame', title: 'New issue', body: process.env.DESCRIPTION, label: 'RELEASE' }
+            github.issues.create(issue)
+      # - name: Create Release Issue
+      #   uses: peter-evans/create-issue-from-file@v4
+      #   with:
+      #     title: Release
+      #     # content-filepath: ./CHANGELOG.md
+      #     # labels: RELEASE
+      #     # token: ${{ secrets.MY_TOKEN }}
   deploy:
     needs: release
     runs-on: ubuntu-latest
