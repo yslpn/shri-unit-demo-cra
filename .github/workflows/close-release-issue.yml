@@ -4,6 +4,7 @@ on:
     types: [opened, labeled]
 permissions:
   contents: write
+  issues: write
 jobs:
   check_issue:
     if: ${{ (github.event.label.name == 'RELEASE') || (contains(github.event.issue.labels.*.name, 'RELEASE')) }}
