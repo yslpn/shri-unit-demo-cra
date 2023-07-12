@@ -1,0 +1,74 @@
+name: Release process
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install auto-changelog
+        run: npm i -g auto-changelog
+      - name: Generate changelog
+        run: auto-changelog --commit-limit false --template keepachangelog
+      - name: Create Issue
+        id: create_issue
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const description = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const [owner, repo] = '${{ github.repository }}'.split('/');
+            const version = '${{ github.ref }}'.replace('refs/tags/', '');
+            const issue = { owner, repo, title: `Release ${version} by ${{ github.actor }}`, body: description, labels: ['RELEASE'] };
+            const response = await github.rest.issues.create(issue);
+            return response.data.number;
+      - name: Upload issue number
+        uses: actions/upload-artifact@v2
+        with:
+          name: issue-number
+          path: issue-number.txt
+  check_issue:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Dependencies
+        run: npm ci
+      - name: Check Label and Run Tests
+        run: npm run test
+      - name: Build Project
+        run: npm run build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+      - name: Download issue number
+        uses: actions/download-artifact@v2
+        with:
+          name: issue-number
+      - name: Close Issue
+        if: ${{ success() }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const issueNumber = parseInt(fs.readFileSync('issue-number.txt', 'utf8'));
+            const [owner, repo] = '${{ github.repository }}'.split('/');
+            github.rest.issues.update({
+              owner: owner,
+              repo: repo,
+              issue_number: issueNumber,
+              state: "closed"
+            });
