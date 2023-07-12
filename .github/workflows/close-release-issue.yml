@@ -6,7 +6,7 @@ permissions:
   contents: write
 jobs:
   check_issue:
-    if: ${{ github.event.label.name == 'RELEASE' }}
+    if: ${{ (github.event.label.name == 'RELEASE') || (contains(github.event.issue.labels.*.name, 'RELEASE')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
