@@ -32,17 +32,15 @@ jobs:
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const version = '${{ github.ref }}'.replace('refs/tags/', '');
             const title = `Release ${version} by ${{ github.actor }}`;
-            const issue = { owner, repo, labels: ['RELEASE'] };
+            const issue = { owner, repo, labels: ['RELEASE'], body: description, state: "opened" };
             const issues = await github.rest.issues.listForRepo(issue);
             const existingIssue = issues.data.find(i => i.title === title);
 
             if (existingIssue) {
-              const update = { ...issue, issue_number: existingIssue.number, body: description };
-              await github.rest.issues.update(update);
+              await github.rest.issues.update({ ...issue, issue_number: existingIssue.number });
               return existingIssue.number;
             } else {
-              const create = { ...issue, title: title, body: description };
-              const response = await github.rest.issues.create(create);
+              const response = await github.rest.issues.create(issue);
               return response.data.number;
             }
   check_issue:
