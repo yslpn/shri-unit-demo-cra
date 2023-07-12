@@ -2,6 +2,8 @@ name: Handle release issue
 on:
   issues:
     types: [opened, labeled]
+permissions:
+  contents: write
 jobs:
   check_issue:
     if: ${{ github.event.label.name == 'RELEASE' }}
