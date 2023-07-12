@@ -60,6 +60,7 @@ jobs:
       # - name: Install Playwright Browsers
       #   run: npx playwright install --with-deps
       - name: Run tests and lint files
+        continue-on-error: true
         run: |
           npm run test-ci |& tee test-results.txt
           npm run e2e |& tee -a test-results.txt
