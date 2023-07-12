@@ -28,6 +28,8 @@ jobs:
             const issue = { owner, repo, title: `Release ${version} by ${{ github.actor }}`, body: description, labels: ['RELEASE'] };
             const response = await github.rest.issues.create(issue);
             return response.data.number;
+      - name: Save issue number to file
+        run: echo "${{ steps.create_issue.outputs.result }}" > issue-number.txt
       - name: Upload issue number
         uses: actions/upload-artifact@v2
         with:
