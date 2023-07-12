@@ -29,6 +29,7 @@ jobs:
         if: ${{ success() }}
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueNumber = context.issue.number;
             const repoName = context.repo.repo;
