@@ -59,15 +59,33 @@ jobs:
         run: npx playwright install --with-deps
       - name: Run tests and lint files
         run: |
-          npm run test-ci
-          npm run e2e
-          npm run lint
+          npm run test-ci |& tee test-results.txt
+          npm run e2e |& tee -a test-results.txt
+          npm run lint |& tee -a test-results.txt
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: test-results.txt
       - name: Build Project
         run: PUBLIC_URL="/shri-unit-demo-cra" npm run build
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build
+      - name: Comment Issue
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
+            const [owner, repo] = '${{ github.repository }}'.split('/');
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: "Test results are uploaded as an artifact. You can download them [here](https://github.com/${owner}/${repo}/actions/runs/${{ github.run_id }}/artifacts)."
+            });
       - name: Close Issue
         if: ${{ success() }}
         uses: actions/github-script@v6
