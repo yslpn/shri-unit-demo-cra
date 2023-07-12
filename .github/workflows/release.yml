@@ -76,17 +76,24 @@ jobs:
         with:
           folder: build
       - name: Comment Issue
+        uses: actions/download-artifact@v3
+        with:
+          name: test-results
+          path: .
+      - name: Comment Issue with Test Results
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const fs = require('fs');
+            const testResults = fs.readFileSync('test-results.txt', 'utf8');
             const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
             const [owner, repo] = '${{ github.repository }}'.split('/');
             github.rest.issues.createComment({
               owner,
               repo,
               issue_number: issueNumber,
-              body: "Test results are uploaded as an artifact. You can download them [here](https://github.com/${owner}/${repo}/actions/runs/${{ github.run_id }}/artifacts)."
+              body: `Test results:\n\n\`\`\`\n${testResults}\n\`\`\``
             });
       - name: Close Issue
         if: ${{ success() }}
