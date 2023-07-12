@@ -14,7 +14,7 @@ jobs:
       - name: Install auto-changelog
         run: npm i -g auto-changelog
       - name: Generate changelog
-        run: auto-changelog --output CHANGELOG.md
+        run: auto-changelog --commit-limit false --template keepachangelog
       - name: Create Issue
         uses: actions/github-script@v6
         with:
