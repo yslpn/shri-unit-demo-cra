@@ -24,12 +24,13 @@ export const TodoList: FC = () => {
     <div>
       <div>
         <input data-testid="input-add" value={text} onChange={onChange} />
-        <button data-testid="button-add" onClick={onClick}>
+        <button type={"button"} data-testid="button-add" onClick={onClick}>
           Добавить
         </button>
       </div>
       <div data-testid="list" className="list">
-        {items.map((text, i) => (
+        {items.map((_, i) => (
+          // rome-ignore lint/suspicious/noArrayIndexKey: <explanation>
           <TodoItem key={i} index={i} />
         ))}
       </div>
