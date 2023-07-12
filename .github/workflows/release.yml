@@ -62,6 +62,7 @@ jobs:
       - name: Run tests and lint files
         continue-on-error: true
         run: |
+          set -o pipefail
           npm run test-ci |& tee test-results.txt
           npm run e2e |& tee -a test-results.txt
           npm run lint |& tee -a test-results.txt
