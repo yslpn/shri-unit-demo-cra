@@ -13,5 +13,5 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm ci
-      - name: Validate all commits from PR
+      - name: Lint all files
         run: npm run lint
