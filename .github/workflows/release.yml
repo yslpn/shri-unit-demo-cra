@@ -45,7 +45,7 @@ jobs:
               const response = await github.rest.issues.create(create);
               return response.data.number;
             }
-  check_issue:
+  tests:
     needs: release
     runs-on: ubuntu-latest
     steps:
@@ -69,12 +69,6 @@ jobs:
         with:
           name: test-results
           path: test-results.txt
-      - name: Build Project
-        run: PUBLIC_URL="/shri-unit-demo-cra" npm run build
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: build
       - name: Comment Issue
         uses: actions/download-artifact@v3
         with:
@@ -95,8 +89,17 @@ jobs:
               issue_number: issueNumber,
               body: `Test results:\n\n\`\`\`\n${testResults}\n\`\`\``
             });
+  deploy_and_build:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Project
+        run: PUBLIC_URL="/shri-unit-demo-cra" npm run build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
       - name: Close Issue
-        if: ${{ success() }}
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
