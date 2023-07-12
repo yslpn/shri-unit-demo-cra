@@ -6,6 +6,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.create_issue.outputs.result }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -28,13 +30,6 @@ jobs:
             const issue = { owner, repo, title: `Release ${version} by ${{ github.actor }}`, body: description, labels: ['RELEASE'] };
             const response = await github.rest.issues.create(issue);
             return response.data.number;
-      - name: Save issue number to file
-        run: echo "${{ steps.create_issue.outputs.result }}" > issue-number.txt
-      - name: Upload issue number
-        uses: actions/upload-artifact@v2
-        with:
-          name: issue-number
-          path: issue-number.txt
   check_issue:
     needs: release
     runs-on: ubuntu-latest
@@ -55,18 +50,13 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build
-      - name: Download issue number
-        uses: actions/download-artifact@v2
-        with:
-          name: issue-number
       - name: Close Issue
         if: ${{ success() }}
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const issueNumber = parseInt(fs.readFileSync('issue-number.txt', 'utf8'));
+            const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
             const [owner, repo] = '${{ github.repository }}'.split('/');
             github.rest.issues.update({
               owner: owner,
