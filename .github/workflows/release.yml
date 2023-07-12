@@ -24,7 +24,7 @@ jobs:
             const description = fs.readFileSync('CHANGELOG.md', 'utf8');
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const version = '${{ github.ref }}'.replace('refs/tags/', '');
-            const issue = { owner, repo, title: `Release ${version} by ${{ github.actor }}`, body: description, label: 'RELEASE' };
+            const issue = { owner, repo, title: `Release ${version} by ${{ github.actor }}`, body: description, labels: ['RELEASE'] };
             github.rest.issues.create(issue);
   deploy:
     needs: release
