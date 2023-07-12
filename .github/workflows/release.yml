@@ -36,10 +36,10 @@ jobs:
       - name: Create Release Issue
         uses: peter-evans/create-issue-from-file@v4
         with:
-          title: Release ${GITHUB_REF##*/}
-          content-filepath: ./CHANGELOG.md
-          labels: RELEASE
-          token: ${{ secrets.MY_TOKEN }}
+          title: Release
+          # content-filepath: ./CHANGELOG.md
+          # labels: RELEASE
+          # token: ${{ secrets.MY_TOKEN }}
   deploy:
     needs: release
     runs-on: ubuntu-latest
