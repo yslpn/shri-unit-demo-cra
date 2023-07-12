@@ -40,7 +40,7 @@ jobs:
           script: |
             const fs = require('fs');
             const description = fs.readFileSync('CHANGELOG.md', 'utf8');
-            const issue = { owner: 'ownername', repo: 'reponame', title: 'Release ${{ github.ref }}', body: description };
+            const issue = { owner: '${{ github.repository_owner }}', repo: '${{ github.repository }}', title: 'Release ${{ github.ref }} by ${{ github.actor }}', body: description };
             github.rest.issues.create(issue);
   deploy:
     needs: release
