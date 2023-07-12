@@ -39,7 +39,7 @@ jobs:
           title: Release ${GITHUB_REF##*/}
           content-filepath: ./CHANGELOG.md
           labels: RELEASE
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MY_TOKEN }}
   deploy:
     needs: release
     runs-on: ubuntu-latest
