@@ -92,7 +92,7 @@ jobs:
               body: `Test results:\n\n\`\`\`\n${testResults}\n\`\`\``
             });
   deploy_and_build:
-    needs: tests
+    needs: [tests, release]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
