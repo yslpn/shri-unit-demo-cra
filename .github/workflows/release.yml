@@ -101,6 +101,20 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build
+      - name: Comment Deployed Version
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
+            const [owner, repo] = '${{ github.repository }}'.split('/');
+            const deploymentLink = `https://${owner}.github.io/${repo}/`;
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: `Deployment was successful. The link to the deployed version is available [here](${deploymentLink})`
+            });
       - name: Close Issue
         uses: actions/github-script@v6
         with:
