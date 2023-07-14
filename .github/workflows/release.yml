@@ -45,21 +45,25 @@ jobs:
               const response = await github.rest.issues.create(create);
               return { number: response.data.number };
             }
-      - name: Check if branch exists
-        id: checkbranch
-        run: |
-          BRANCH_EXIST=$(git ls-remote --heads origin "${{ github.ref }}" | wc -l)
-          echo "::set-output name=exists::$BRANCH_EXIST"
-      - name: Create or update branch
-        run: |
-          if [ "${{ steps.checkbranch.outputs.exists }}" -eq "0" ]; then
-            git checkout -b "${{ github.ref }}"
-            git push origin "${{ github.ref }}"
-          else
-            git checkout "${{ github.ref }}"
-            git pull origin master
-            git push origin "${{ github.ref }}"
-          fi
+      # - name: Check if branch exists
+      #   id: checkbranch
+      #   run: |
+      #     BRANCH_EXIST=$(git ls-remote --heads origin "${{ github.ref }}" | wc -l)
+      #     echo "::set-output name=exists::$BRANCH_EXIST"
+      # - name: Initialize mandatory git config
+      #   run: |
+      #     git config user.name "GitHub Actions"
+      #     git config user.email noreply@github.com
+      # - name: Create or update branch
+      #   run: |
+      #     if [ "${{ steps.checkbranch.outputs.exists }}" -eq "0" ]; then
+      #       git checkout -b "${{ github.ref }}"
+      #       git push origin "${{ github.ref }}"
+      #     else
+      #       git checkout "${{ github.ref }}"
+      #       git pull origin master
+      #       git push origin "${{ github.ref }}"
+      #     fi
       - name: Create or Update Pull Request
         id: create_or_update_pr
         uses: actions/github-script@v6
@@ -70,18 +74,24 @@ jobs:
             const prBody = fs.readFileSync('CHANGELOG.md', 'utf8');
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const base = 'stable';
-            const head = '${{ github.ref }}';
+            const head = '${{ github.ref }}'.replace('refs/tags/', '');
             const issue_number = ${{ steps.create_issue.outputs.number }};
-            const title = `Release ${head.replace('refs/tags/', '')} by ${{ github.actor }}`;
+            const title = `Release ${head} by ${{ github.actor }}`;
             const pr = { owner, repo, base, head, body: prBody, title };
-
+      
             const pulls = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${head}` });
             const existingPr = pulls.data.find(p => p.title === title);
-
+      
             if (existingPr) {
               const update = { owner, repo, pull_number: existingPr.number, body: prBody };
               const response = await github.rest.pulls.update(update);
             } else {
-              const create = { pr };
-              const response = await github.rest.pulls.create(create);
+              try {
+                const create = { ...pr };
+                const response = await github.rest.pulls.create(create);
+              } catch (error) {
+                console.error(`Failed to create pull request: ${error}`);
+                process.exit(1);
+              }
             }
+    
