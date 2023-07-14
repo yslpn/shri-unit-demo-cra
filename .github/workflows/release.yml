@@ -56,7 +56,6 @@ jobs:
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const base = 'stable';
             const head = '${{ github.ref }}';
-            # const title = `Release ${head.replace('refs/tags/', '')} by ${{ github.actor }}`;
             const issue_number = ${{ steps.create_issue.outputs.result }};
             const pr = { owner, repo, base, head, body: prBody };
       
