@@ -45,17 +45,21 @@ jobs:
               const response = await github.rest.issues.create(create);
               return { number: response.data.number };
             }
-      - name: Create a new branch
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const repo = context.repo;
-            const source = 'master';
-            const destination = '${{ github.ref }}';
-            await github.git.getRef({ ...repo, ref: `heads/${source}` })
-            .then(response => github.git.createRef({ ...repo, ref: `refs/heads/${destination}`, sha: response.data.object.sha }))
-            .catch(error => console.log(error));
+      - name: Check if branch exists
+        id: checkbranch
+        run: |
+          BRANCH_EXIST=$(git ls-remote --heads origin "${{ github.ref }}" | wc -l)
+          echo "::set-output name=exists::$BRANCH_EXIST"
+      - name: Create or update branch
+        run: |
+          if [ "${{ steps.checkbranch.outputs.exists }}" -eq "0" ]; then
+            git checkout -b "${{ github.ref }}"
+            git push origin "${{ github.ref }}"
+          else
+            git checkout "${{ github.ref }}"
+            git pull origin master
+            git push origin "${{ github.ref }}"
+          fi
       - name: Create or Update Pull Request
         id: create_or_update_pr
         uses: actions/github-script@v6
