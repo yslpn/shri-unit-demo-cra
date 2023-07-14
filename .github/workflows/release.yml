@@ -77,7 +77,7 @@ jobs:
             const head = 'release-${{ github.ref_name }}';
             const issue_number = ${{ needs.issue.outputs.issue_number }};
             const prBody = 'This is a pull request for release. Closes #' + issue_number;
-            const title = `Release ${head} by ${{ github.actor }}`;
+            const title = 'Release ${{ github.ref_name }} by ${{ github.actor }}';
             const pr = { owner, repo, base, head, body: prBody, title };
 
             const pulls = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${head}` });
