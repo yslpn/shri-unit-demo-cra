@@ -55,8 +55,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const prBody = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const prBody = 'This is a pull request for release';
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const base = 'stable';
             const head = '${{ github.ref }}'.replace('refs/tags/', '');
@@ -69,13 +68,7 @@ jobs:
 
             if (existingPr) {
               const update = { owner, repo, pull_number: existingPr.number, body: prBody };
-              const response = await github.rest.pulls.update(update);
+              await github.rest.pulls.update(update);
             } else {
-              try {
-                const create = { ...pr };
-                const response = await github.rest.pulls.create(create);
-              } catch (error) {
-                console.error(`Failed to create pull request: ${error}`);
-                process.exit(1);
-              }
+              await github.rest.pulls.create({ ...pr });
             }
