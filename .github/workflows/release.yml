@@ -56,15 +56,15 @@ jobs:
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const base = 'stable';
             const head = '${{ github.ref }}';
-            const title = `Release ${head.replace('refs/tags/', '')} by ${{ github.actor }}`;
+            # const title = `Release ${head.replace('refs/tags/', '')} by ${{ github.actor }}`;
             const issue_number = ${{ steps.create_issue.outputs.result }};
-            const pr = { owner, repo, base, head, title, body: prBody };
+            const pr = { owner, repo, base, head, body: prBody };
       
             const pulls = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${head}` });
             const existingPr = pulls.data.find(p => p.title === title);
       
             if (existingPr) {
-              const update = { owner, repo, pull_number: existingPr.number, title, body: prBody };
+              const update = { owner, repo, pull_number: existingPr.number, body: prBody };
               const response = await github.rest.pulls.update(update);
               return response.data.number;
             } else {
