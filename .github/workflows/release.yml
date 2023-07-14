@@ -7,7 +7,7 @@ jobs:
   create_release:
     runs-on: ubuntu-latest
     outputs:
-      issue_number: ${{ steps.create_issue.outputs.result }}
+      issue_number: ${{ steps.create_issue.outputs.number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -39,11 +39,11 @@ jobs:
             if (existingIssue) {
               const update = { ...issue, issue_number: existingIssue.number, body: description, state: 'open' };
               await github.rest.issues.update(update);
-              return existingIssue.number;
+              return { number: existingIssue.number };
             } else {
               const create = { ...issue, title: title, body: description };
               const response = await github.rest.issues.create(create);
-              return response.data.number;
+              return { number: response.data.number };
             }
       - name: Create or Update Pull Request
         id: create_or_update_pr
@@ -56,8 +56,9 @@ jobs:
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const base = 'stable';
             const head = '${{ github.ref }}';
-            const issue_number = ${{ steps.create_issue.outputs.result }};
-            const pr = { owner, repo, base, head, body: prBody };
+            const issue_number = ${{ steps.create_issue.outputs.number }};
+            const title = `Release ${head.replace('refs/tags/', '')} by ${{ github.actor }}`;
+            const pr = { owner, repo, base, head, body: prBody, title };
       
             const pulls = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${head}` });
             const existingPr = pulls.data.find(p => p.title === title);
@@ -65,12 +66,11 @@ jobs:
             if (existingPr) {
               const update = { owner, repo, pull_number: existingPr.number, body: prBody };
               const response = await github.rest.pulls.update(update);
-              return response.data.number;
             } else {
-              const create = { ...pr, issue: issue_number };
+              const create = { pr };
               const response = await github.rest.pulls.create(create);
-              return response.data.number;
             }
+
   # tests:
   #   needs: release
   #   runs-on: ubuntu-latest
