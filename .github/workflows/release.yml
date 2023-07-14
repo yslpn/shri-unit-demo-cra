@@ -65,7 +65,7 @@ jobs:
         run: |
           git checkout -b release-${{ github.ref_name }}
       - name: Push the branch
-        run: git push release-${{ github.ref_name }}
+        run: git push origin release-${{ github.ref_name }}
       - name: Create or Update Pull Request
         id: create_or_update_pr
         uses: actions/github-script@v6
