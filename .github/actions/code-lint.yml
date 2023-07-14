@@ -1,0 +1,13 @@
+name: 'Run tests'
+description: 'Installs dependencies and runs tests'
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: true
+    default: '18'
+runs:
+  using: "composite"
+  steps:
+    - run: npm ci
+      shell: bash
+    - run: npm run lint
