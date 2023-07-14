@@ -72,11 +72,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const prBody = 'This is a pull request for release';
             const [owner, repo] = '${{ github.repository }}'.split('/');
             const base = 'stable';
             const head = 'release-${{ github.ref_name }}';
             const issue_number = ${{ needs.issue.outputs.issue_number }};
+            const prBody = `This is a pull request for release #${issue_number}`;
             const title = `Release ${head} by ${{ github.actor }}`;
             const pr = { owner, repo, base, head, body: prBody, title };
 
