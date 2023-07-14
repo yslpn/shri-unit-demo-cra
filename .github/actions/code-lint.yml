@@ -1,5 +1,5 @@
-name: 'Run tests'
-description: 'Installs dependencies and runs tests'
+name: 'Code lint'
+description: 'Installs dependencies and code lint'
 inputs:
   node-version:
     description: 'Node.js version to use'

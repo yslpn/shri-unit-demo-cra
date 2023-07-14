@@ -1,5 +1,5 @@
-name: 'Run tests'
-description: 'Installs dependencies and runs tests'
+name: 'Run unit tests'
+description: 'Installs dependencies and run unit tests'
 inputs:
   node-version:
     description: 'Node.js version to use'

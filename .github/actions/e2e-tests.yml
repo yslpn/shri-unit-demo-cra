@@ -1,5 +1,5 @@
-name: 'Run tests'
-description: 'Installs dependencies and runs tests'
+name: 'Run e2e tests'
+description: 'Installs dependencies and runs e2e tests'
 inputs:
   node-version:
     description: 'Node.js version to use'
