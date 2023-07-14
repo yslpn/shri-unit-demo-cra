@@ -4,7 +4,7 @@ on:
     tags:
       - "v*"
 jobs:
-  release:
+  create_release:
     runs-on: ubuntu-latest
     outputs:
       issue_number: ${{ steps.create_issue.outputs.result }}
@@ -45,94 +45,121 @@ jobs:
               const response = await github.rest.issues.create(create);
               return response.data.number;
             }
-  tests:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Install Dependencies
-        run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: Run tests and lint files
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          npm run test-ci |& tee test-results.txt
-          npm run e2e |& tee -a test-results.txt
-          npm run lint |& tee -a test-results.txt
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: test-results.txt
-      - name: Comment Issue
-        uses: actions/download-artifact@v3
-        with:
-          name: test-results
-          path: .
-      - name: Comment Issue with Test Results
+      - name: Create or Update Pull Request
+        id: create_or_update_pr
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const testResults = fs.readFileSync('test-results.txt', 'utf8');
-            const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
+            const prBody = fs.readFileSync('CHANGELOG.md', 'utf8');
             const [owner, repo] = '${{ github.repository }}'.split('/');
-            github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: `Test results:\n\n\`\`\`\n${testResults}\n\`\`\``
-            });
-  deploy_and_build:
-    needs: [tests, release]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Install Dependencies
-        run: npm ci
-      - name: Build Project
-        run: PUBLIC_URL="/shri-unit-demo-cra" npm run build
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: build
-      - name: Comment Deployed Version
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
-            const [owner, repo] = '${{ github.repository }}'.split('/');
-            const deploymentLink = `https://${owner}.github.io/${repo}/`;
-            github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: `Deployment was successful. The link to the deployed version is available [here](${deploymentLink})`
-            });
-      - name: Close Issue
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
-            const [owner, repo] = '${{ github.repository }}'.split('/');
-            github.rest.issues.update({
-              owner: owner,
-              repo: repo,
-              issue_number: issueNumber,
-              state: "closed"
-            });
+            const base = 'stable';
+            const head = '${{ github.ref }}';
+            const title = `Release ${head.replace('refs/tags/', '')} by ${{ github.actor }}`;
+            const issue_number = ${{ steps.create_issue.outputs.result }};
+            const pr = { owner, repo, base, head, title, body: prBody };
+      
+            const pulls = await github.rest.pulls.list({ owner, repo, state: 'open', head: `${owner}:${head}` });
+            const existingPr = pulls.data.find(p => p.title === title);
+      
+            if (existingPr) {
+              const update = { owner, repo, pull_number: existingPr.number, title, body: prBody };
+              const response = await github.rest.pulls.update(update);
+              return response.data.number;
+            } else {
+              const create = { ...pr, issue: issue_number };
+              const response = await github.rest.pulls.create(create);
+              return response.data.number;
+            }
+  # tests:
+  #   needs: release
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
+  #     - name: Install Dependencies
+  #       run: npm ci
+  #     - name: Install Playwright Browsers
+  #       run: npx playwright install --with-deps
+  #     - name: Run tests and lint files
+  #       continue-on-error: true
+  #       run: |
+  #         set -o pipefail
+  #         npm run test-ci |& tee test-results.txt
+  #         npm run e2e |& tee -a test-results.txt
+  #         npm run lint |& tee -a test-results.txt
+  #     - name: Upload Test Results
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: test-results
+  #         path: test-results.txt
+  #     - name: Comment Issue
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: test-results
+  #         path: .
+  #     # - name: Comment Issue with Test Results
+  #     #   uses: actions/github-script@v6
+  #     #   with:
+  #     #     github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     #     script: |
+  #     #       const fs = require('fs');
+  #     #       const testResults = fs.readFileSync('test-results.txt', 'utf8');
+  #     #       const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
+  #     #       const [owner, repo] = '${{ github.repository }}'.split('/');
+  #     #       github.rest.issues.createComment({
+  #     #         owner,
+  #     #         repo,
+  #     #         issue_number: issueNumber,
+  #     #         body: `Test results:\n\n\`\`\`\n${testResults}\n\`\`\``
+  #     #       });
+  # deploy_and_build:
+  #   needs: release
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
+  #     - name: Install Dependencies
+  #       run: npm ci
+  #     - name: Build Project
+  #       run: PUBLIC_URL="/shri-unit-demo-cra" npm run build
+  #     - name: Deploy 🚀
+  #       uses: JamesIves/github-pages-deploy-action@v4
+  #       with:
+  #         folder: build
+  #     - name: Comment Deployed Version
+  #       uses: actions/github-script@v6
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         script: |
+  #           const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
+  #           const [owner, repo] = '${{ github.repository }}'.split('/');
+  #           const deploymentLink = `https://${owner}.github.io/${repo}/`;
+  #           github.rest.issues.createComment({
+  #             owner,
+  #             repo,
+  #             issue_number: issueNumber,
+  #             body: `Deployment was successful. The link to the deployed version is available [here](${deploymentLink})`
+  #           });
+  #     - name: Close Issue
+  #       uses: actions/github-script@v6
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         script: |
+  #           const issueNumber = parseInt(${{ needs.release.outputs.issue_number }});
+  #           const [owner, repo] = '${{ github.repository }}'.split('/');
+  #           github.rest.issues.update({
+  #             owner: owner,
+  #             repo: repo,
+  #             issue_number: issueNumber,
+  #             state: "closed"
+  #           });
