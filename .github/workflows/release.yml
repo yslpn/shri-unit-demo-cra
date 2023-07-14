@@ -143,4 +143,4 @@ jobs:
           git fetch origin stable:stable
           echo "::set-output name=sha::$(git rev-parse stable)"
       - name: Validate all commits from PR
-        run: npx commitlint --from ${{ steps.get_commit_sha_for_tag.outputs.sha }} --to ${{ steps.get_latest_commit_sha_in_stable_branch.outputs.sha }} --verbose
+        run: npx commitlint --from ${{ steps.get_latest_commit_sha_in_stable_branch.outputs.sha }} --to ${{ steps.get_commit_sha_for_tag.outputs.sha }} --verbose
