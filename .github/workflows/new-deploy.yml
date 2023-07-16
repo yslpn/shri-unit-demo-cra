@@ -29,7 +29,7 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: build
-      - name: Update PR and Issue after successful deployment
+      - name: Attempt to Merge PR and Comment on Issue after successful deployment
         if: steps.deploy.outcome == 'success'
         uses: actions/github-script@v6
         with:
@@ -40,8 +40,9 @@ jobs:
             const issue_number = ${{ github.event.inputs.issue_number }};
             const message = 'Deploy was successful.';
 
-            // Close the PR
-            await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
-
-            // Add comment to the issue
-            await github.rest.issues.createComment({ owner, repo, issue_number, body: message });
+            try {
+              await github.rest.pulls.merge({ owner, repo, pull_number });
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: message });
+            } catch (error) {
+              console.error("Failed to merge the PR:", error);
+            }
