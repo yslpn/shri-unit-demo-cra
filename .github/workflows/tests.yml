@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: "18"
-      - run : ci
+      - run : npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npm run e2e

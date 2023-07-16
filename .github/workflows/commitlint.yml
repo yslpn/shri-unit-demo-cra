@@ -10,7 +10,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install required dependencies
-        run: ci
+        run: npm ci
       - name: Install commitlint
         run: |
           npm install conventional-changelog-conventionalcommits
