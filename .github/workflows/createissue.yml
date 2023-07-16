@@ -37,7 +37,6 @@ jobs:
         run: |
           TAG=$(git tag -l v[0-9]* --sort=-creatordate | head -n 1)
           ISSUE_TITLE="RELEASE ${TAG}"
-          
           echo "ISSUE_ID=$(gh issue list --json number,title -q \
           ".[] | select(.title == \"${ISSUE_TITLE}\") | .number")" >> $GITHUB_OUTPUT
         env:
