@@ -1,4 +1,4 @@
-name: Create issue on push tag
+name: create-new-issue-on-push-with-tag
 on:
     push:
         tags:
@@ -7,22 +7,56 @@ permissions:
   contents: read
   issues: write 
 jobs:
-  stuff:
+  create_issue:
     runs-on: ubuntu-latest
-    steps:
-        
+    steps:        
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: seting tags
+        id: tags
+        run: |
+          echo "CURR=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "PREV=$(git describe --tags --abbrev=0 ${{ github.ref_name }}^)" >> $GITHUB_OUTPUT
       - name: get tag info
         id: tag-info
-        run: echo "TAG_CONTENT=$(git cat-file tag ${{ github.ref_name }} | tail -n+6)" >> $GITHUB_OUTPUT
-      - uses: dacbd/create-issue-action@main
+        run: echo "TAG_CONTENT=$(git for-each-ref --count=1 refs/tags/v* --shell --sort='-refname' --format='TAG=%(refname) CONTENTS=%(*body) DATE=%(taggerdate)')"
+      - name: check tag content
+        run: | 
+            echo "TAG_ CONTENT ${{ steps.tag-info.outputs.TAG_CONTENT }}"
+            echo "TAG ${{ steps.tag-info.outputs.TAG_CONTENT.TAG }}"
+            echo "TAG ${{ steps.tag-info.outputs.TAG_CONTENT.CONTENTS }}"
+            echo "TAG ${{ steps.tag-info.outputs.TAG_CONTENT.DATE }}"
+      - name: create changelog
+        id: changelog
+        run: echo "CHANGELOG=$(git log --pretty=format:"- %s" "${{ steps.tags.outputs.PREV }}..${{ steps.tags.outputs.CURR }}")" >> $GITHUB_OUTPUT
+      - name: check changelog
+        run: echo ${{ steps.changelog.outputs.CHANGELOG }}
+      - name: find issue
+        id: find_issue
+        run: |
+          TAG=$(git tag -l v[0-9]* --sort=-creatordate | head -n 1)
+          ISSUE_TITLE="RELEASE ${TAG}"
+          
+          echo "ISSUE_ID=$(gh issue list --json number,title -q \
+          ".[] | select(.title == \"${ISSUE_TITLE}\") | .number")" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with: 
-            token: ${{ secrets.GITHUB_TOKEN }}
+      - name: check issue ID
+        id: check_id
+        run: echo "ISSUE_EXISTS=${{ steps.tag-info.outputs.ISSUE_ID }}" >> $GITHUB_OUTPUT
+      - name: create new issue
+        id: issue
+        uses: dacbd/create-issue-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+            token: ${{ env.GITHUB_TOKEN }}
             title: RELEASE ${{ github.ref_name }}
             labels: RELEASE
             body: |
-              Release: ${{ github.ref_name }}
               Author: ${{ github.actor }}
-              Info: ${{ steps.tag-info.outputs.TAG_CONTENT }}
+              Version: ${{ github.ref_name }}
+              ${{ steps.tag-info.outputs.TAG_CONTENT }}
+              Changelog: ${{ steps.changelog.outputs.CHANGELOG }}
+    

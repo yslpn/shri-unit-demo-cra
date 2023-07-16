@@ -1,31 +1,27 @@
-name: release
+name: deploy
 on: workflow_dispatch
 jobs:
-    perform-tests:
-        uses: ./.github/workflows/tests.yml
-    build-app:
-        needs: perform-tests
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-node@v3 
-          with:
-            node-version: "18"
-        - run: npm ci
-        - run: npm run build
-          if: success()
-        - uses: actions/upload-artifact@v3
-          with:
-            name: build
-            path: build/
-    deploy:
-      needs: build-app
+    get_tag:
       runs-on: ubuntu-latest
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REPOSITORY: pini86/unit-demo-cra
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       steps:
-        - run: |
-            npm i gh-pages
-            git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-            npx gh-pages -d build -u "github-actions-bot <support+actions@github.com>"
+        - uses: actions/checkout@v3
+          with:
+              fetch-depth: 0
+        - name: get last tag
+          id: last
+          run: |
+            echo "TAG=$(git describe --tags --match v[0-9]* $(git rev-list --tags --max-count=1))" >> $GITHUB_OUTPUT
+
+        - name: checking tag
+          id: ok
+          run: echo ${{ steps.last.outputs.TAG }}
+
+
+    perform-tests:
+        needs: get_tag
+        uses: ./.github/workflows/tests.yml
+        with: 
+          update_issue: true
+          tagname: ${{ needs.get_tag.steps.last.outputs.TAG }}
