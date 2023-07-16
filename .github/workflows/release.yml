@@ -1,55 +1,110 @@
-name: deploy
-on: workflow_dispatch
+name: Release work
+run-name: ${{ github.actor }} release new version 
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+'
+
+permissions:
+  contents: read
+  issues: write
+
 jobs:
-    get_tag:
-      runs-on: ubuntu-latest
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      steps:
-        - uses: actions/checkout@v3
-          with:
-              fetch-depth: 0
-        - name: get last tag
-          id: last
-          run: |
-            echo "TAG=$(git describe --tags --match v[0-9]* $(git rev-list --tags --max-count=1))" >> $GITHUB_OUTPUT
+  Validate-in-ContInt-for-PullReq:
+    uses: ./.github/workflows/createissue.yml
 
-        - name: checking tag
-          id: ok
-          run: echo ${{ steps.last.outputs.TAG }}
-    perform-tests:
-        needs: get_tag
-        uses: ./.github/workflows/tests.yml
-        with: 
-          update_issue: true
-          tagname: ${{ needs.get_tag.outputs.tag }}
+  Release:
+    needs: Validate-in-ContInt-for-PullReq
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-    deploy:
-      needs: perform-tests
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/setup-node@v3
-          with:
-            node-version: "18"
-        - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
-          if: ${{ github.ref == 'refs/heads/master' }}
-        - run: |
-            npm ci
-            git remote set-url origin https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-            npm run deploy -- -u "github-actions-bot <support+actions@github.com>"
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          if: success()
-        - name: close issue
-          env:
-            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          run: |
-            TAG=$(git describe --tags --abbrev=0)
-            ISSUE_TITLE="RELEASE ${TAG}"
-            ISSUE_ID=$(gh issue list --json number,title -q \
-              ".[] | select(.title == \"${ISSUE_TITLE}\") | .number")
-            if [ ! -z "$ISSUE_ID" ]; then
-              gh issue close $ISSUE_ID -c "[Release successfully deployed](https://pini86.github.io/unit-demo-cra/)" -r "completed"
-            fi
+      - name: Create changelog
+        id: changelog
+        uses: ardalanamini/auto-changelog@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          default-commit-type: Other Changes
+          mention-authors: true
+          mention-new-contributors: false
+          include-compare-link: true
+          include-pr-links: true
+          include-commit-links: true
+          semver: false
+          use-github-autolink: true
+
+      - name: Info for issue
+        id: infoForIssue
+        run: |
+          echo "author=${{ github.actor }}" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%d.%m.%Y %H:%M:%S')" >> $GITHUB_OUTPUT
+          version=${{ github.ref_name }}
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          prevVersion=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -2 | head -1)
+          echo "prevVersion=${prevVersion}" >> $GITHUB_OUTPUT
+          
+      - name: Create issue and update it
+        id: issue
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          AUTHOR: ${{ steps.infoForIssue.outputs.author }}
+          DATE: ${{ steps.infoForIssue.outputs.date }}
+          VERSION: ${{ steps.infoForIssue.outputs.version}}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/ISSUE_TEMPLATE.md
+          update_existing: true
+          search_existing: all
+
+      - name: Link of test result for release list
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ steps.issue.outputs.number }}
+          body: |
+            Tests results:
+            ${{github.server_url}}/${{ github.repository }}/actions/runs/${{github.run_id}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      issueNumber: ${{ steps.issue.outputs.number }}
+
+  Deploy:
+    needs: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy with gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+
+      - name: Put info about deploy to issue
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ needs.Release.outputs.issueNumber }}
+          body: |
+            Deploy
+            See: https://pini86.github.io/SHRI-unit-demo-cra/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Close Issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ needs.Release.outputs.issueNumber }}
+          comment: Close issue
