@@ -45,4 +45,5 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body: message });
             } catch (error) {
               console.error("Failed to merge the PR:", error);
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: "Failed to merge the PR" });
             }
