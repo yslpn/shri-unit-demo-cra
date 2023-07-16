@@ -99,7 +99,7 @@ jobs:
           issue-number: ${{ needs.Release.outputs.issueNumber }}
           body: |
             Deploy
-            See: https://pini86.github.io/SHRI-unit-demo-cra/
+            See: https://pini86.github.io/unit-demo-cra/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
