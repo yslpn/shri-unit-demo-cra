@@ -1,4 +1,4 @@
-name: Create an issue on push tag
+name: Create issue on push tag
 on:
     push:
         tags:
