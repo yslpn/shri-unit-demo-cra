@@ -38,11 +38,6 @@ jobs:
             const issue_number = ${{ github.event.inputs.issue_number }};
             const message = 'Deploy was successful.';
 
-            try {
-              await github.rest.pulls.merge({ owner, repo, pull_number });
-              await github.rest.issues.createComment({ owner, repo, issue_number, body: message });
-              await github.rest.issues.update({ owner, repo, issue_number, state: "closed" });
-            } catch (error) {
-              console.error("Failed to merge the PR:", error);
-              await github.rest.issues.createComment({ owner, repo, issue_number, body: "Failed to merge the PR" });
-            }
+            await github.rest.pulls.merge({ owner, repo, pull_number });
+            await github.rest.issues.createComment({ owner, repo, issue_number, body: message });
+            await github.rest.issues.update({ owner, repo, issue_number, state: "closed" });
