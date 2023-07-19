@@ -1,4 +1,4 @@
-Testing releases
+Testing releases v4.8
 
 В этом репозитории находится пример приложения с тестами:
 
